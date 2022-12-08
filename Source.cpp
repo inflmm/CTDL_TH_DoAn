@@ -4,17 +4,19 @@
 #include <string>
 #include <cstdio>
 
-// Dong dau tien trong file khong can sap xep, ghi thang vao
-// NRow: so luong dong doc 1 lan (RAM 4GB: 300,000 dong, RAM 8GB: 2,000,000 dong)
+#include <chrono>
+using namespace std::chrono;
 
 using namespace std;
+
+// RowLimit: so luong dong doc 1 lan (RAM 4GB: 300,000 dong, RAM 8GB: 2,000,000 dong)
+int RowLimit = 250;
 
 struct Book
 {
     string ID;
     string text;
 };
-int RowLimit = 250; // 4 GB RAM: 300000, 8 GB RAM: 2000000
 
 int partition(Book*& arr, int low, int high)
 {
@@ -51,7 +53,7 @@ void writeSmallFile(Book*& Lines, int& end, vector<string>& Sorted, int& count)
     count++;
     Sorted.push_back(name);
 
-    fstream file(name, ios_base::out);
+    fstream file(name, ios_base::out | ios_base::binary);
     if (!file.is_open())
     {
         cout << "Cannot open file." << endl;
@@ -67,23 +69,36 @@ void writeSmallFile(Book*& Lines, int& end, vector<string>& Sorted, int& count)
     }
     file.close();
 }
-void writeSmallMergeFile(string output, string input1, string input2)
+void writeSmallMergeFile(string output, string input1, string input2, bool lastFile)
 {
-    fstream fileOutput(output, ios_base::out);
-    fstream fileInput1(input1, ios_base::in);
-    fstream fileInput2(input2, ios_base::in);
+    fstream fileOutput(output, ios_base::out | ios_base::binary);
+    fstream fileInput1(input1, ios_base::in | ios_base::binary);
+    fstream fileInput2(input2, ios_base::in | ios_base::binary);
     Book book1;
     Book book2;
     string s = "";
     string line = "";
     bool check1 = false;
     bool check2 = false;
+
+    int count1 = 0, count2 = 0;
+
     if (!fileOutput.is_open() || !fileInput1.is_open() || !fileInput2.is_open())
     {
         cout << "Cannot open file." << endl;
     }
     else
     {
+        if (lastFile == true)
+        {
+            fstream f("Books_Rating.csv", ios_base::in);
+            string line;
+            getline(f, line, '\n');
+            cout << "final: true" << endl;
+            //cout << line << endl;
+            fileOutput << line << endl;
+            f.close();
+        }
         while (!fileInput1.eof() || !fileInput2.eof())
         {
             if (check1 == false && !fileInput1.eof())
@@ -91,7 +106,7 @@ void writeSmallMergeFile(string output, string input1, string input2)
                 getline(fileInput1, line, '\n');
                 if (line[0] == NULL)
                 {
-                    continue;
+                    //cout << true << endl;
                 }
                 int length = line.length();
                 for (int j = 0; j < length; j++)
@@ -105,7 +120,6 @@ void writeSmallMergeFile(string output, string input1, string input2)
                 book1.ID = s;
                 book1.text = line;
                 s = "";
-                line = "";
                 check1 = true;
             }
             else if (check2 == false && !fileInput2.eof())
@@ -113,7 +127,7 @@ void writeSmallMergeFile(string output, string input1, string input2)
                 getline(fileInput2, line, '\n');
                 if (line[0] == NULL)
                 {
-                    continue;
+                    //cout << true << endl;
                 }
                 int length = line.length();
                 for (int j = 0; j < length; j++)
@@ -127,49 +141,74 @@ void writeSmallMergeFile(string output, string input1, string input2)
                 book2.ID = s;
                 book2.text = line;
                 s = "";
-                line = "";
                 check2 = true;
             }
 
             if (fileInput1.eof())
             {
-                fileOutput << book2.text;
+                if(book2.text[0] != NULL)
+                {
+                    fileOutput << book2.text << endl;
+                    //count2++;
+                }
+                
 
                 while (!fileInput2.eof())
                 {
                     getline(fileInput2, line, '\n');
-                    if (line[0] == NULL)
+ 
+                    if (line[0] != NULL)
                     {
-                        continue;
+                        fileOutput << line << endl;
+                        //count2++;
                     }
-                    fileOutput << endl << line ;
-                    line = "";
+                    
                 }
             }
             else if (fileInput2.eof())
             {
-                fileOutput << book1.text;
-
+                if (book1.text[0] != NULL)
+                {
+                    fileOutput << book1.text << endl;
+                    //count1++;
+                }
+                
                 while (!fileInput1.eof())
                 {
                     getline(fileInput1, line, '\n');
-                    if (line[0] == NULL)
+                    if (line[0] != NULL)
                     {
-                        continue;
+                        fileOutput << line << endl;
+                        //count1++;
                     }
-                    fileOutput << endl << line ;
-                    line = "";
+                    
                 }
             }
 
             if (book1.ID < book2.ID)
             {
-                fileOutput << book1.text << endl;
+                if (book1.text[0] == NULL)
+                {
+                    //cout << true << endl;
+                }
+                else
+                {
+                    fileOutput << book1.text << endl;
+                    //count1++;
+                } 
                 check1 = false;
             }
             else
             {
-                fileOutput << book2.text << endl;
+                if (book2.text[0] == NULL)
+                {
+                    //cout << true << endl;
+                }
+                else
+                {
+                    fileOutput << book2.text << endl;
+                    //count2++;
+                }
                 check2 = false;
             }
         }
@@ -179,19 +218,19 @@ void writeSmallMergeFile(string output, string input1, string input2)
     fileInput1.close();
     fileInput2.close();
 
+    //cout << "Count1: " << count1 << endl;
+    //cout << "Count2: " << count2 << endl;
+
     //xoa file
     remove(input1.c_str());
     remove(input2.c_str());
 }
-void ReadAndCreateFile(vector<string>& Sorted, vector<string>& Merge)
+void ReadAndCreateFile(string fileName, vector<string>& Sorted, vector<string>& Merge)
 {
-    //int limit = 1000;
-
     string line;
-    string fileName("Books_rating_test.csv");
     int count = 0;
 
-    fstream file(fileName, ios_base::in);
+    fstream file(fileName, ios_base::in | ios_base::binary);
     if (!file.is_open())
     {
         cout << "Cannot open file." << endl;
@@ -204,6 +243,9 @@ void ReadAndCreateFile(vector<string>& Sorted, vector<string>& Merge)
         }
         while (!file.eof())
         {
+            cout << count << endl;
+            cout << "Bat dau nap file" << endl;
+
             Book* Lines = new Book[RowLimit];
             int i = 0;
             while (i < RowLimit)
@@ -228,14 +270,18 @@ void ReadAndCreateFile(vector<string>& Sorted, vector<string>& Merge)
                 i++;
             }
 
-
+            cout << "Nap file xong" << endl;
+            cout << "Bat dau sort" << endl;
+            
             quickSort(Lines, 0, i - 1);
 
-            //trong trường hợp file nhỏ mà ram có thể chứa hết các dòng, đến end of file, thì cho sắp xếp rồi xuất thẳng file ra, nhớ delete Lines
-            if (file.eof() == true && count == 0) // nghĩa là đã đến cuối file nhưng k có ghi file nhỏ nào cả
+            cout << "Sort xong" << endl;
+
+            //trong trường hợp file có số dòng nhỏ hơn RowLimit, đến end of file, sau khi sắp xếp rồi xuất thẳng file ra, nhớ delete Lines
+            if (file.eof() == true && count == 0) // nghĩa là đã đến cuối file nhưng chưa ghi file nhỏ nào cả
             {
                 //cout << "true" << endl;
-                fstream fileResult("Books_rating_Sorted.csv", ios_base::out);
+                fstream fileResult("Books_rating_Sorted.csv", ios_base::out | ios_base::binary);
                 if (!fileResult.is_open())
                 {
                     cout << "Cannot open file." << endl;
@@ -243,18 +289,13 @@ void ReadAndCreateFile(vector<string>& Sorted, vector<string>& Merge)
                 else
                 {
                     file.close();
-                    file.open(fileName, ios_base::in);
+                    file.open(fileName, ios_base::in | ios_base::binary);
                     //file.seekg(0, file.beg);
-                    getline(file, line);
-                    fileResult << line;
-                    cout << line << endl;
-                    cout << Lines[0].text << endl;
-                    cout << Lines[1].text << endl;
-                    cout << Lines[2].text << endl;
+                    getline(file, line, '\n');
+                    fileResult << line << endl;
                     int j = 0;
-                    while (j < i - 1)
+                    while (j <= i)
                     {
-                        //cout << Lines[j].text << endl;
                         fileResult << Lines[j].text << endl;
                         j++;
                     }
@@ -266,52 +307,131 @@ void ReadAndCreateFile(vector<string>& Sorted, vector<string>& Merge)
                 return;
             }
 
+            cout << "Bat dau ghi file" << endl;
+
             writeSmallFile(Lines, i, Sorted, count);
+
+            cout << "Ghi file xong" << endl;
+            cout << "---------------" << endl << endl;
 
             delete[] Lines;
         }
+
+        cout << "Da doc het file csv" << endl;
+
         for (int i = 0; i < count - 1; i++)
         {
             string name = "Merge";
             name = name + to_string(i) + ".csv";
             Merge.push_back(name);
-            /*fstream mergeFile(name, ios::out);
-            mergeFile.close();*/
         }
-
-
     }
+    cout << "Create Sorted file successfully." << endl;
+    cout << "---------------" << endl << endl;
     file.close();
 }
 
 void MergeFile(vector<string> Sorted, vector<string> Merge)
 {
-    //int lengthSorted = Sorted.size();
+
     int lengthMerge = Merge.size();
-    //cout << lengthSorted << " " << lengthMerge << endl;
-    //cout << Merge[0] << " " << Sorted[0] << " " << Sorted[1] << endl;
-    writeSmallMergeFile(Merge[0], Sorted[0], Sorted[1]);
+
+    if(lengthMerge <= 0) // Co 1 file sorted, so dong file csv < RowLimit
+    {
+        return;
+    }
+    else if (lengthMerge == 1) // Chi co tong cong 2 file sorted
+    {
+        cout << "Merge 0" << endl;
+        writeSmallMergeFile(Merge[0], Sorted[0], Sorted[1], true);
+    }
+    else // Tong cong nhieu hon 2 file sorted
+    {
+        cout << "Merge 0" << endl;
+        writeSmallMergeFile(Merge[0], Sorted[0], Sorted[1], false);
+    }
+    
+    cout << "Merge 0 xong" << endl;
+    cout << "---------------" << endl << endl;
+
     for (int i = 0; i < lengthMerge - 1; i++)
     {
-        //cout << Merge[i + 1] << " " << Sorted[i + 2] << " " << Merge[i] << endl;
-        writeSmallMergeFile(Merge[i + 1], Sorted[i + 2], Merge[i]);
-    }
+        if (i == lengthMerge - 2)
+        {
+            cout << "final merge" << endl;
+            writeSmallMergeFile(Merge[i + 1], Sorted[i + 2], Merge[i], true);
+            cout << "final merge complete" << endl;
+            cout << "---------------" << endl << endl;
+            cout << "The file has been sorted successfully and saved as Books_rating_Sorted.csv" << endl;
+            break;
+        }
+        
+        cout << "Merge " << i + 1 << endl;
+
+        writeSmallMergeFile(Merge[i + 1], Sorted[i + 2], Merge[i], false);
+
+        cout << "Merge " << i + 1<<" xong" << endl;
+        cout << "---------------" << endl << endl;
+    } 
 
     remove("Books_rating_Sorted.csv");
     rename(Merge[lengthMerge - 1].c_str(), "Books_rating_Sorted.csv");
+    
 }
 
 void Run()
 {
+    RowLimit = 300000; // 4GB: 300,000; 8GB: 2,000,000
+
+    cout << "RowLimit: " << RowLimit << endl << endl;
     vector<string> Sorted;
     vector<string> Merge;
-    ReadAndCreateFile(Sorted, Merge);
-    MergeFile(Sorted, Merge);
+    string fileName("Books_rating.csv"); //"Books_rating.csv" de chay file chinh, "Books_rating_test.csv" de chay thu
+    ReadAndCreateFile(fileName, Sorted, Merge);
+    MergeFile(Sorted, Merge); // Luu trong "Books_rating_Sorted.csv"
+}
+
+void runResultFile()
+{
+    fstream file("Books_rating_Sorted.csv", ios_base::in);
+    fstream result("Result.csv", ios_base::out);
+    if (!file.is_open())
+    {
+        cout << "Cannot open file." << endl;
+    }
+    else
+    {
+        string line;
+        for (int i = 0; i < 1000; i++)
+        {
+            getline(file, line, '\n');
+            result << line << endl;
+        }
+    }
+    file.close();
+    result.close();
+
+
 }
 
 int main()
 {
+    auto start = high_resolution_clock::now();
+
     Run();
+
+    auto stop = high_resolution_clock::now();
+
+    auto duration = duration_cast<microseconds>(stop - start);
+
+    auto duration1 = duration_cast<seconds>(stop - start);
+
+    cout << "Time taken: "
+        << duration.count() << " microseconds" << endl;
+    cout << "Time taken: "
+        << duration1.count() << " seconds" << endl;
+
+    //runResultFile();
 
     return 0;
 }
