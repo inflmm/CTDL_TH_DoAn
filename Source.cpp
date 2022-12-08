@@ -1,8 +1,8 @@
-﻿#include<iostream>
-#include<fstream>
+﻿#include <iostream>
+#include <fstream>
 #include <vector>
-#include<string>
-#include <stdio.h>
+#include <string>
+#include <cstdio>
 
 // Dong dau tien trong file khong can sap xep, ghi thang vao
 // NRow: so luong dong doc 1 lan (RAM 4GB: 300,000 dong, RAM 8GB: 2,000,000 dong)
@@ -60,7 +60,7 @@ void writeSmallFile(Book*& Lines, int& end, vector<string>& Sorted, int& count)
     {
         int i = 0;
         while (i < end)
-        {
+        {   
             file << Lines[i].text << endl;
             i++;
         }
@@ -89,6 +89,10 @@ void writeSmallMergeFile(string output, string input1, string input2)
             if (check1 == false && !fileInput1.eof())
             {
                 getline(fileInput1, line, '\n');
+                if (line[0] == NULL)
+                {
+                    continue;
+                }
                 int length = line.length();
                 for (int j = 0; j < length; j++)
                 {
@@ -107,6 +111,10 @@ void writeSmallMergeFile(string output, string input1, string input2)
             else if (check2 == false && !fileInput2.eof())
             {
                 getline(fileInput2, line, '\n');
+                if (line[0] == NULL)
+                {
+                    continue;
+                }
                 int length = line.length();
                 for (int j = 0; j < length; j++)
                 {
@@ -125,21 +133,31 @@ void writeSmallMergeFile(string output, string input1, string input2)
 
             if (fileInput1.eof())
             {
-                fileOutput << book2.text << endl;
+                fileOutput << book2.text;
+
                 while (!fileInput2.eof())
                 {
                     getline(fileInput2, line, '\n');
-                    fileOutput << line << endl;
+                    if (line[0] == NULL)
+                    {
+                        continue;
+                    }
+                    fileOutput << endl << line ;
                     line = "";
                 }
             }
             else if (fileInput2.eof())
             {
-                fileOutput << book1.text << endl;
+                fileOutput << book1.text;
+
                 while (!fileInput1.eof())
                 {
                     getline(fileInput1, line, '\n');
-                    fileOutput << line << endl;
+                    if (line[0] == NULL)
+                    {
+                        continue;
+                    }
+                    fileOutput << endl << line ;
                     line = "";
                 }
             }
@@ -183,8 +201,6 @@ void ReadAndCreateFile(vector<string>& Sorted, vector<string>& Merge)
         if (file.tellg() == 0)
         {
             getline(file, line, '\n');
-            int length = line.length() + 1;
-            file.seekg(length);
         }
         while (!file.eof())
         {
@@ -216,7 +232,7 @@ void ReadAndCreateFile(vector<string>& Sorted, vector<string>& Merge)
             quickSort(Lines, 0, i - 1);
 
             //trong trường hợp file nhỏ mà ram có thể chứa hết các dòng, đến end of file, thì cho sắp xếp rồi xuất thẳng file ra, nhớ delete Lines
-            if (file.eof() == true && count == 0) // nghĩa là đã đến cuối file nhưng có ghi file nhỏ nào cả
+            if (file.eof() == true && count == 0) // nghĩa là đã đến cuối file nhưng k có ghi file nhỏ nào cả
             {
                 //cout << "true" << endl;
                 fstream fileResult("Books_rating_Sorted.csv", ios_base::out);
@@ -281,7 +297,8 @@ void MergeFile(vector<string> Sorted, vector<string> Merge)
         writeSmallMergeFile(Merge[i + 1], Sorted[i + 2], Merge[i]);
     }
 
-
+    remove("Books_rating_Sorted.csv");
+    rename(Merge[lengthMerge - 1].c_str(), "Books_rating_Sorted.csv");
 }
 
 void Run()
@@ -295,7 +312,6 @@ void Run()
 int main()
 {
     Run();
-
 
     return 0;
 }
