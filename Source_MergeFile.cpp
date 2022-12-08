@@ -66,77 +66,102 @@ void writeSmallFile(Book*& Lines, int& end, vector<string>& Sorted, int& count)
     }
     file.close();
 }
-void writeSmallMergeFile(string merge1,string sorted1, string sorted2)
+void writeSmallMergeFile(string output,string input1, string input2)
 {
-    fstream fileMerge(merge1, ios_base::out);
-    fstream fileSorted1(sorted1, ios_base::in);
-    fstream fileSorted2(sorted2, ios_base::in);
-    string ID1 = "";
-    string ID2 = "";
-    string line1 = "";
-    string line2 = "";
-    bool checkSorted1 = true;
-    bool checkSorted2 = true;
+    fstream fileOutput(output, ios_base::out);
+    fstream fileInput1(input1, ios_base::in);
+    fstream fileInput2(input2, ios_base::in);
+    Book book1;
+    Book book2;
+    string s = "";
+    string line = "";
+    bool check1 = false;
+    bool check2 = false;
     if (!fileMerge.is_open())
     {
         cout << "Cannot open file." << endl;
     }
     else
     {
-        while (!fileSorted1.eof() && !fileSorted2.eof())
+        while (!fileInput1.eof() || !fileInput2.eof())
         {
-            if (checkSorted1 == true)
+            if (check1 == false && !fileInput1.eof())
             {
-                getline(fileSorted1, line1, '\n');
-                int length = line1.length();
+                getline(fileInput1, line, '\n');
+                int length = line.length();
                 for (int j = 0; j < length; j++)
                 {
                     if (line1[j] == ',')
                     {
                         break;
                     }
-                    ID1 += line1[j];
+                    s += line1[j];
                 }
+                book1.ID = s;
+                book1.text = line;
+                s = "";
+                line = "";
+                check1 = true;
             }
-            if (checkSorted2 == true)
+            else if (check2 == false && !fileInput.eof())
             {
-                getline(fileSorted1, line2, '\n');
-                int length = line2.length();
+                getline(fileInput2, line, '\n');
+                int length = line.length();
                 for (int j = 0; j < length; j++)
                 {
                     if (line2[j] == ',')
                     {
                         break;
                     }
-                    ID1 += line2[j];
+                    s += line2[j];
+                }
+                book2.ID = s;
+                book2.text = line;
+                s = "";
+                line = "";
+                check2 = true;
+            }
+
+            if (fileInput1.eof())
+            {
+                fileOutput << book2.text << endl;
+                while (!fileInput2.eof())
+                {
+                    getline(fileInput2, line, '\n');
+                    fileOutput << line << endl;
+                    line = "";
+                }
+            }
+            else if (fileInput2.eof())
+            {
+                fileOutput << book1.text << endl;
+                while (!fileInput1.eof())
+                {
+                    getline(fileInput1, line, '\n');
+                    fileOutput << line << endl;
+                    line = "";
                 }
             }
 
-            if (ID1 < ID2)
+            if (book1.ID < book2.ID)
             {
-                fileMerge << line1 << endl;
-                checkSorted2 = false;
-                checkSorted1 = true;
-                if (fileSorted1.eof())
-                {
-                    checkSorted2 = true;
-                }
+                fileOutput << book1.text << endl;
+                check1 = false;
             }
             else
             {
-                fileMerge <<line2 << endl;
-                checkSorted1 = false;
-                checkSorted2 = true;
-                if (fileSorted2.eof())
-                {
-                    checkSorted1 = true;
-                }
+                fileOutput << book2.text << endl;
+                check2 = false;
             }
         }
     }
-    fileMerge.close();
-    fileSorted1.close();
-    fileSorted2.close();
+ 
+    fileOutput.close();
+    fileInput1.close();
+    fileInput2.close();
+    //xoa file
+    //remove(input1);
+    //remove(input2);
 }
 void ReadAndCreateFile(vector<string> &Sorted, vector<string> &Merge)
 {
@@ -246,12 +271,13 @@ void MergeFile(vector<string> Sorted, vector<string> Merge)
     int lengthSorted = Sorted.size();
     int lengthMerge = Merge.size();
     //cout << lengthSorted << " " << lengthMerge << endl;
-    int count = 0;
-    for (int i = 0;i < lengthSorted/2;i++)
+    writeSmallMergeFile(Merge[0], Sorted[0], Sorted[1]);
+    for (int i = 0; i < lengthSorted; i++)
     {
-       writeSmallMergeFile(Merge[i], Sorted[i + count], Sorted[i+1 + count]);
-       count++;
+        writeSmallMergeFile(Merge[i + 1], Sorted[i + 2], Merge[i]);
     }
+
+
 }
 
 void Run()
