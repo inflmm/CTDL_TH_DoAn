@@ -10,6 +10,7 @@ using namespace std::chrono;
 using namespace std;
 
 // RowLimit: so luong dong doc 1 lan (RAM 4GB: 300,000 dong, RAM 8GB: 2,000,000 dong)
+// CHU Y: RoWLimit co thay doi gia tri tai ham Run()
 int RowLimit = 250;
 
 struct Book
